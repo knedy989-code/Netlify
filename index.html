@@ -3,71 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iPad Server Controller</title>
+    <title>iPad Deploy Station</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-white min-h-screen flex items-center justify-center p-6">
+<body class="bg-[#0f172a] text-slate-200 min-h-screen flex items-center justify-center p-4">
 
-    <div class="w-full max-w-md bg-slate-800 border border-slate-700 p-8 rounded-3xl shadow-2xl">
+    <div class="w-full max-w-md bg-[#1e293b] border border-slate-700 p-8 rounded-3xl shadow-2xl">
         <div class="text-center mb-8">
-            <h1 class="text-3xl font-extrabold text-blue-400">DeployStation</h1>
-            <p class="text-slate-400 text-sm mt-2">Manage your servers from your iPad</p>
+            <h1 class="text-3xl font-black text-blue-500 tracking-tight">DeployStation</h1>
+            <p class="text-slate-400 text-sm mt-1 font-medium">iPad-to-GitHub Hosting Control</p>
         </div>
         
         <div class="space-y-5">
-            <!-- 1. The GitHub Token (Your Secret Key) -->
+            <!-- GitHub Token Input -->
             <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase ml-1 mb-1">GitHub Token</label>
-                <input id="token" type="password" placeholder="ghp_xxxxxxxxxxxx" 
-                       class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-1">Personal Access Token</label>
+                <input id="token" type="password" placeholder="ghp_your_secret_token" 
+                       class="w-full bg-[#0f172a] border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all text-blue-400">
             </div>
             
-            <!-- 2. Your GitHub Username -->
+            <!-- GitHub Username -->
             <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase ml-1 mb-1">Username</label>
-                <input id="owner" type="text" placeholder="Your GitHub Name" 
-                       class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-1">GitHub Username</label>
+                <input id="owner" type="text" placeholder="e.g., smartboyk2015" 
+                       class="w-full bg-[#0f172a] border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all">
             </div>
             
-            <!-- 3. The Repository you want to host -->
+            <!-- Repository Name -->
             <div>
-                <label class="block text-xs font-semibold text-slate-500 uppercase ml-1 mb-1">Repository</label>
-                <input id="repo" type="text" placeholder="my-web-project" 
-                       class="w-full bg-slate-900 border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 mb-1">Target Repository</label>
+                <input id="repo" type="text" placeholder="e.g., my-cool-project" 
+                       class="w-full bg-[#0f172a] border border-slate-700 p-3 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all">
             </div>
             
-            <!-- The Magic Button -->
-            <button onclick="startDeploy()" id="deployBtn"
-                    class="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-900/20 transition-all">
-                🚀 Deploy to Production
+            <!-- Deployment Button -->
+            <button onclick="handleDeployment()" id="deployBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-500 active:scale-95 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-900/30 transition-all flex items-center justify-center gap-2">
+                <span id="btnIcon">🚀</span>
+                <span id="btnText">Deploy to Production</span>
             </button>
         </div>
 
-        <p id="status" class="mt-8 text-center text-xs font-mono text-slate-500 italic"></p>
+        <!-- Feedback Area -->
+        <div id="statusBox" class="mt-8 p-3 rounded-lg bg-[#0f172a]/50 hidden">
+            <p id="statusMsg" class="text-center text-xs font-mono"></p>
+        </div>
     </div>
 
     <script>
-        async function startDeploy() {
+        async function handleDeployment() {
             const token = document.getElementById('token').value;
             const owner = document.getElementById('owner').value;
             const repo = document.getElementById('repo').value;
-            const status = document.getElementById('status');
+            const statusBox = document.getElementById('statusBox');
+            const statusMsg = document.getElementById('statusMsg');
             const btn = document.getElementById('deployBtn');
+            const btnText = document.getElementById('btnText');
 
+            // Basic Validation
             if (!token || !owner || !repo) {
-                status.innerText = "⚠️ Error: Fill in all fields!";
-                status.classList.add('text-red-400');
+                alert("Missing information! Please fill all fields.");
                 return;
             }
 
-            // Lock button and show loading
+            // UI Loading State
             btn.disabled = true;
-            btn.innerText = "Deploying...";
-            status.innerText = "📡 Sending signal to GitHub Actions...";
-            status.classList.remove('text-red-400', 'text-green-400');
+            btnText.innerText = "Processing...";
+            statusBox.classList.remove('hidden');
+            statusMsg.className = "text-center text-xs font-mono text-blue-400";
+            statusMsg.innerText = "📡 Waking up GitHub Action Engine...";
 
             try {
-                // This Fetch call triggers the 'ipad_deploy_trigger' inside your .yml file
+                // The JavaScript Fetch command that connects to GitHub's API
                 const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/dispatches`, {
                     method: 'POST',
                     headers: {
@@ -76,24 +83,24 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        event_type: 'ipad_deploy_trigger'
+                        event_type: 'ipad_deploy_trigger' // This must match your .yml file!
                     })
                 });
 
                 if (response.status === 204) {
-                    status.classList.add('text-green-400');
-                    status.innerText = "✅ Success! Build started. Check GitHub Actions.";
+                    statusMsg.className = "text-center text-xs font-mono text-green-400 font-bold";
+                    statusMsg.innerText = "✅ SUCCESS: Build triggered! Site updating now.";
                 } else {
-                    const data = await response.json();
-                    status.classList.add('text-red-400');
-                    status.innerText = "❌ Failed: " + (data.message || "Check your Token.");
+                    const errorData = await response.json().catch(() => ({ message: "Check Token/Repo name" }));
+                    statusMsg.className = "text-center text-xs font-mono text-red-400";
+                    statusMsg.innerText = "❌ ERROR: " + errorData.message;
                 }
-            } catch (err) {
-                status.classList.add('text-red-400');
-                status.innerText = "❌ Network Error. Check your iPad's connection.";
+            } catch (error) {
+                statusMsg.className = "text-center text-xs font-mono text-red-500";
+                statusMsg.innerText = "❌ NETWORK ERROR: Check iPad connection.";
             } finally {
                 btn.disabled = false;
-                btn.innerText = "🚀 Deploy to Production";
+                btnText.innerText = "Deploy to Production";
             }
         }
     </script>
